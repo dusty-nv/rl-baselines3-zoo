@@ -1,3 +1,8 @@
+
+# https://githubmemory.com/repo/pyglet/pyglet/issues/367
+import pyglet
+pyglet.options['headless'] = True
+
 import argparse
 import glob
 import importlib
@@ -7,6 +12,8 @@ import sys
 import numpy as np
 import torch as th
 import yaml
+import cv2
+
 from stable_baselines3.common.utils import set_random_seed
 
 import utils.import_envs  # noqa: F401 pylint: disable=unused-import
@@ -18,7 +25,7 @@ from utils.utils import StoreDict
 def main():  # noqa: C901
     parser = argparse.ArgumentParser()
     parser.add_argument("--env", help="environment ID", type=str, default="CartPole-v1")
-    parser.add_argument("-f", "--folder", help="Log folder", type=str, default="rl-trained-agents")
+    parser.add_argument("-f", "--folder", help="Log folder", type=str, default="/jetson-reinforcement/rl-trained-agents")
     parser.add_argument("--algo", help="RL Algorithm", default="ppo", type=str, required=False, choices=list(ALGOS.keys()))
     parser.add_argument("-n", "--n-timesteps", help="number of timesteps", default=1000, type=int)
     parser.add_argument("--num-threads", help="Number of threads for PyTorch (-1 to use default)", default=-1, type=int)
@@ -194,8 +201,12 @@ def main():  # noqa: C901
             action, state = model.predict(obs, state=state, deterministic=deterministic)
             obs, reward, done, infos = env.step(action)
             if not args.no_render:
-                env.render("human")
-
+                #env.render("human")
+                screen = env.render(mode='rgb_array')
+                screen = cv2.cvtColor(screen, cv2.COLOR_RGB2BGR)
+                cv2.imshow(f'{args.env} - {args.algo}', screen)  
+                cv2.waitKey(1) 
+        
             episode_reward += reward[0]
             ep_len += 1
 
